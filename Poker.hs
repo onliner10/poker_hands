@@ -9,7 +9,7 @@ module Poker where
 	data Rank = A | K | Q | J | Ten | Nine | Eight | Seven | Six | Five | Four | Three | Two deriving (Show, Eq, Ord, Enum)  
 	data Card = Card {rank :: Rank, suit :: Suit} deriving (Show, Eq, Ord)  
 	type Kicker = Rank
-	data Hand = Flush [Rank] Suit | Street [Rank] | Color (Suit) | FullHouse Rank Rank | FourOfAKind {ofRank :: (Rank), kicker :: Kicker} | ThreeOfAKind {ofRank :: (Rank), kicker :: Kicker} | TwoPairs {ofRanks :: (Rank, Rank), kicker:: Kicker } | Pair {ofRank :: Rank,  kicker :: Kicker} | HighestCard Rank deriving (Show, Eq, Ord)  
+	data Hand = StraightFlush [Rank] Suit | Street [Rank] | Flush (Suit) | FullHouse Rank Rank | FourOfAKind {ofRank :: (Rank), kicker :: Kicker} | ThreeOfAKind {ofRank :: (Rank), kicker :: Kicker} | TwoPairs {ofRanks :: (Rank, Rank), kicker:: Kicker } | Pair {ofRank :: Rank,  kicker :: Kicker} | HighestCard Rank deriving (Show, Eq, Ord)  
 
 	rankOrder :: [Rank]
 	rankOrder = [A .. Two] ++ [A]
@@ -63,8 +63,8 @@ module Poker where
 		(ThreeOfAKind three _) <- threeOfAKind cards
 		return $ FullHouse three pair
 
-	color :: [Card] -> Maybe Hand
-	color cards = (single . nub . map suit $ cards) >>= (Just . Color)
+	flush :: [Card] -> Maybe Hand
+	flush cards = (single . nub . map suit $ cards) >>= (Just . Flush)
 
 	street :: [Card] -> Maybe Hand
 	street cards
@@ -72,12 +72,12 @@ module Poker where
 		| otherwise						= Nothing
 		where ranks = (sort $ map rank cards)
 
-	flush :: [Card] -> Maybe Hand
-	flush cards = do
-		(Color suit) <- color cards
+	straightFlush :: [Card] -> Maybe Hand
+	straightFlush cards = do
+		(Flush suit) <- flush cards
 		(Street ranks) <- street cards
-		return $ Flush ranks suit
+		return $ StraightFlush ranks suit
 
 	identifyHand :: [Card] -> Hand
 	identifyHand cards = head . sort $ hands
-		where hands = catMaybes $ map ($ cards) [highestCard, pair, twoPairs, threeOfAKind, fourOfAKind, fullHouse, color, street, flush]
+		where hands = catMaybes $ map ($ cards) [highestCard, pair, twoPairs, threeOfAKind, fourOfAKind, fullHouse, flush, street, straightFlush]
